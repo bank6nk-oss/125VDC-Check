@@ -1,44 +1,203 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แบบตรวจสอบแบตเตอรี่ 125 VDC</title>
+  <import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    h1 { font-size: 18px; }
-    div, label, table { font-size: 16px; }
-    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
-    .warning { color: red; font-weight: bold; }
+    * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
+    body { font-size: 16px; padding: 15px; background-color: #f4f6f9; color: #333; margin: 0; }
+    h1 { font-size: 18px; text-align: center; color: #111; margin-bottom: 20px; }
+    
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; }
+    input[type="date"], input[type="number"], select {
+      width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; background-color: #fff;
+    }
+    
+    /* จัดการตารางให้เลื่อนซ้าย-ขวาได้บนมือถือ โดยไม่ดันหน้าจอพัง */
+    .table-responsive { overflow-x: auto; margin-top: 20px; border-radius: 4px; border: 1px solid #ddd; }
+    table { width: 100%; border-collapse: collapse; min-width: 750px; background-color: #fff; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; vertical-align: middle; }
+    th { background-color: #007bff; color: white; font-weight: bold; }
+    
+    .table-responsive input, .table-responsive select { padding: 6px; font-size: 14px; }
+    
+    /* ปุ่มกดสไตล์โมบาย */
+    .btn {
+      display: block; width: 100%; padding: 14px; margin-top: 10px; font-size: 16px; font-weight: bold;
+      color: white; border: none; border-radius: 4px; cursor: pointer; text-align: center;
+    }
+    .btn-add { background-color: #007bff; }
+    .btn-save { background-color: #28a745; }
+    .btn-pdf { background-color: #dc3545; }
+    
+    .warning { color: red; font-weight: bold; font-size: 14px; }
   </style>
 </head>
 <body>
+
   <h1>แบบตรวจสอบแบตเตอรี่ 125 VDC</h1>
-  <label>วันที่ตรวจสอบ:</label> <input type="date" id="checkDate"><br><br>
-  <label>รูปแบบการชาร์จ:</label>
-  <select id="chargeType"><option value="FLOAT">FLOAT CHARGE</option><option value="EQUAL">EQUALIZE CHARGE</option></select>
-  
-  <table id="batteryTable">
-    <tr><th>ลูกที่</th><th>สภาพภายนอก</th><th>แรงดัน (V)</th><th>การยกตัว (มม.)</th><th>รูปภาพ</th><th>หมายเหตุ</th></tr>
-    <tr>
-      <td>1</td>
-      <td><select class="status"><option value="ปกติ">ปกติ</option><option value="ผิดปกติ">ผิดปกติ</option></select></td>
-      <td><input type="number" class="cellV"></td>
-      <td><input type="number" class="bulge" oninput="checkHeight(this)"></td>
-      <td><input type="file" accept="image/*" capture="environment" class="photoInput"></td>
-      <td class="remark"></td>
-    </tr>
-  </table>
-  <br>
-  <button onclick="addRow()">เพิ่มแถว</button>
-  <button onclick="sendData()">บันทึกข้อมูล</button>
+
+  <div class="form-group">
+    <label for="checkDate">วันที่ตรวจสอบ:</label>
+    <input type="date" id="checkDate">
+  </div>
+
+  <div class="form-group">
+    <label for="chargeType">รูปแบบการชาร์จ:</label>
+    <select id="chargeType">
+      <option value="FLOAT CHARGE">FLOAT CHARGE</option>
+      <option value="EQUALIZE CHARGE">EQUALIZE CHARGE</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="totalV">แรงดัน total (V):</label>
+    <input type="number" id="totalV" step="0.01" placeholder="ระบุหน่วย VDC">
+  </div>
+
+  <div class="table-responsive">
+    <table id="batteryTable">
+      <thead>
+        <tr>
+          <th style="width: 7%;">ลูกที่</th>
+          <th style="width: 15%;">สภาพภายนอก</th>
+          <th style="width: 18%;">แรงดัน/cell (V)</th>
+          <th style="width: 15%;">การยกตัว (มม.)</th>
+          <th style="width: 25%;">รูปภาพ</th>
+          <th style="width: 20%;">หมายเหตุ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="row-number">1</td>
+          <td>
+            <select class="status" onchange="validatePhotoRequirement(this)">
+              <option value="ปกติ">ปกติ</option>
+              <option value="ผิดปกติ">ผิดปกติ</option>
+            </select>
+          </td>
+          <td><input type="number" class="cellV" step="0.01" style="width: 80px;"> VDC</td>
+          <td><input type="number" class="bulge" oninput="checkHeight(this)" style="width: 70px;"></td>
+          <td><input type="file" accept="image/*" capture="environment" class="photoInput"></td>
+          <td class="remark"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <button class="btn btn-add" onclick="addRow()">➕ เพิ่มแถว</button>
+  <button class="btn btn-save" onclick="sendData()">💾 บันทึกข้อมูลและสร้าง PDF</button>
 
   <script>
-    function addRow() { /* (โค้ดเพิ่มแถวเดิมที่ให้ไป) */ }
-    function checkHeight(el) { /* (โค้ดเช็คความสูงเดิมที่ให้ไป) */ }
-    
-    function sendData() {
-      // ดึงข้อมูลจากตารางและส่งไปที่ Web App URL ของ Apps Script
-      // โดยใช้ fetch() ส่งเป็น JSON ไปยัง URL ของ Apps Script
-      alert("กำลังบันทึกข้อมูล...");
+    // URL ของ Google Apps Script Web App ที่ได้จากการ Deploy (ให้นำมาวางแทนที่ตรงนี้)
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxApVbNGFhKaEzPK-xW0OBsyrUlwDMFGEyQkVIMtYVwUFKAoChJY0x7ebBV742e6GEHuw/exec";
+
+    // ฟังก์ชันเพิ่มแถวอัตโนมัติ
+    function addRow() {
+      let table = document.getElementById("batteryTable").getElementsByTagName('tbody')[0];
+      let rowCount = table.rows.length + 1;
+      let row = table.insertRow(-1);
+      
+      row.innerHTML = `
+        <td class="row-number">${rowCount}</td>
+        <td>
+          <select class="status" onchange="validatePhotoRequirement(this)">
+            <option value="ปกติ">ปกติ</option>
+            <option value="ผิดปกติ">ผิดปกติ</option>
+          </select>
+        </td>
+        <td><input type="number" class="cellV" step="0.01" style="width: 80px;"> VDC</td>
+        <td><input type="number" class="bulge" oninput="checkHeight(this)" style="width: 70px;"></td>
+        <td><input type="file" accept="image/*" capture="environment" class="photoInput"></td>
+        <td class="remark"></td>
+      `;
+    }
+
+    // ตรวจสอบเงื่อนไข ความสูง > 8 มม.
+    function checkHeight(el) {
+      let row = el.parentElement.parentElement;
+      let remarkCell = row.querySelector('.remark');
+      if (parseFloat(el.value) > 8) {
+        remarkCell.innerHTML = '<span class="warning">มีความสูงเกิน 8 มม.</span>';
+      } else {
+        remarkCell.innerHTML = '';
+      }
+    }
+
+    function validatePhotoRequirement(el) {
+      // ฟังก์ชันเปิดไว้สำหรับทำเงื่อนไขแจ้งเตือนไฮไลต์สีกรอบรูปภาพเสริม
+    }
+
+    // ฟังก์ชันแปลงไฟล์รูปภาพเป็น Base64 String เพื่อให้ส่งผ่านอินเทอร์เน็ตได้
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) resolve(null);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    // ฟังก์ชันรวบรวมข้อมูลและส่งไปหลังบ้าน
+    async function sendData() {
+      const date = document.getElementById('checkDate').value;
+      const chargeType = document.getElementById('chargeType').value;
+      const totalV = document.getElementById('totalV').value;
+
+      if (!date) { alert('กรุณาเลือกวันที่ตรวจสอบก่อนครับ'); return; }
+
+      const tableRows = document.getElementById('batteryTable').getElementsByTagName('tbody')[0].rows;
+      let payloadRows = [];
+
+      // วนลูปเช็คข้อมูลในตารางทุกแถว
+      for (let i = 0; i < tableRows.length; i++) {
+        let row = tableRows[i];
+        let num = row.querySelector('.row-number').innerText;
+        let status = row.querySelector('.status').value;
+        let cellV = row.querySelector('.cellV').value;
+        let bulge = row.querySelector('.bulge').value;
+        let photoInput = row.querySelector('.photoInput');
+        let remark = row.querySelector('.remark').innerText;
+
+        // บังคับถ่ายรูปภาพถ้าเลือก "ผิดปกติ"
+        if (status === 'ผิดปกติ' && photoInput.files.length === 0) {
+          alert(`ลูกที่ ${num} มีสภาพผิดปกติ กรุณาถ่ายรูปภาพประกอบด้วยครับ!`);
+          return;
+        }
+
+        let photoData = null;
+        if (photoInput.files.length > 0) {
+          photoData = await fileToBase64(photoInput.files[0]);
+        }
+
+        payloadRows.push({
+          num: num, status: status, cellV: cellV, bulge: bulge, remark: remark, photoData: photoData
+        });
+      }
+
+      // แสดงสถานะกำลังบันทึก
+      alert('ระบบกำลังอัปโหลดรูปภาพ บันทึกข้อมูลลง Sheet และสร้างไฟล์ PDF อาจใช้เวลาสักครู่ครับ...');
+
+      // ยิงข้อมูลไปหา Google Apps Script หลังบ้าน
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: date, chargeType: chargeType, totalV: totalV, rows: payloadRows
+        })
+      })
+      .then(() => {
+        alert('🎉 บันทึกข้อมูลและจัดเก็บไฟล์สำเร็จเรียบร้อยแล้ว!');
+        location.reload(); // เคลียร์หน้าจอพร้อมใช้งานรอบใหม่
+      })
+      .catch(err => {
+        alert('เกิดข้อผิดพลาด: ' + err);
+      });
     }
   </script>
 </body>
