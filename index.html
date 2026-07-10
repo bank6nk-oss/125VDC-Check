@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>แบบตรวจสอบแบตเตอรี่ 125 VDC</title>
+  
   <style>
+    /* 🛡️ จัดระเบียบสไตล์ให้อยู่ในแท็กนี้อย่างถูกต้อง ตัวหนังสือจะไม่โผล่ไปรกหัวเว็บแล้วครับ */
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
 
     * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
@@ -31,13 +33,12 @@
     .btn-add { background-color: #007bff; }
     .btn-save { background-color: #28a745; }
     
+    /* กล่องแจ้งเตือนเมื่อสร้าง PDF สำเร็จ */
     .pdf-container {
       display: none; margin-top: 25px; padding: 15px; 
       background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px;
     }
-    .btn-preview { background-color: #17a2b8; margin-bottom: 8px; }
-    .btn-download { background-color: #ffc107; color: #212529; }
-    
+    .btn-pdf { background-color: #dc3545; font-size: 16px; }
     .warning { color: red; font-weight: bold; font-size: 14px; }
   </style>
 </head>
@@ -97,13 +98,12 @@
   <button class="btn btn-save" onclick="sendData()">💾 บันทึกข้อมูลและสร้าง PDF</button>
 
   <div id="pdfSection" class="pdf-container">
-    <p style="color: #155724; font-weight: bold; margin-top: 0; font-size: 18px; text-align: center;">🎉 สร้างไฟล์ PDF สำเร็จแล้ว!</p>
-    <a id="previewLink" class="btn btn-preview" target="_blank">👁️ กดเพื่อดูตัวอย่างไฟล์ PDF</a>
-    <a id="downloadLink" class="btn btn-download" target="_blank">📥 กดเพื่อดาวน์โหลดไฟล์ PDF ลงเครื่อง</a>
+    <p style="color: #155724; font-weight: bold; margin-top: 0; font-size: 18px; text-align: center;">🎉 บันทึกข้อมูลและสร้างรายงานสำเร็จ!</p>
+    <a id="pdfLink" class="btn btn-pdf" target="_blank" href="#">📄 เปิดดู / ดาวน์โหลดไฟล์รายงาน PDF</a>
   </div>
 
   <script>
-    // ⚠️ นำ URL Web App จากการ Deploy ใหม่ของ Google Apps Script มาวางตรงนี้
+    // ⚠️ [สำคัญมาก] นำลิงก์ Web App URL ตัวใหม่ล่าสุดที่ได้จากสเต็ปหลังบ้านมาวางตรงนี้ครับ
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxApVbNGFhKaEzPK-xW0OBsyrUlwDMFGEyQkVIMtYVwUFKAoChJY0x7ebBV742e6GEHuw/exec";
 
     function addRow() {
@@ -136,7 +136,6 @@
       }
     }
 
-    // ฟังก์ชันใหม่: บีบอัดรูปภาพให้เล็กลงเหลือประมาน 200KB ก่อนส่ง เพื่อแก้ปัญหา Timeout
     function compressImage(file) {
       return new Promise((resolve, reject) => {
         if (!file) resolve(null);
@@ -147,7 +146,7 @@
           img.src = event.target.result;
           img.onload = function () {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 1024; // จำกัดความกว้างรูปภาพไม่เกิน 1024px
+            const MAX_WIDTH = 1024;
             let width = img.width;
             let height = img.height;
 
@@ -160,8 +159,6 @@
             
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            
-            // บีบอัดคุณภาพรูป JPEG เหลือ 0.7 (ไฟล์จะเล็กมากแต่ภาพยังคมชัดอ่านรู้เรื่อง)
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
             resolve(dataUrl);
           };
@@ -194,7 +191,6 @@
           return;
         }
 
-        // เรียกใช้ฟังก์ชันบีบอัดรูปภาพ
         let photoData = null;
         if (photoInput.files.length > 0) {
           photoData = await compressImage(photoInput.files[0]);
@@ -206,36 +202,34 @@
       }
 
       document.getElementById('pdfSection').style.display = 'none';
-      alert('ระบบกำลังส่งข้อมูลและสร้าง PDF (ส่งไวขึ้นเนื่องจากมีการบีบอัดรูปภาพแล้ว) กรุณารอสักครู่...');
+      alert('ระบบกำลังส่งข้อมูลและกำลังประมวลผล PDF... (กรุณารอประมาณ 10-15 วินาที)');
 
-      // ส่งแบบ text/plain เพื่อเลี่ยงปัญหาระบบความปลอดภัยขากลับ
+      // ยิงข้อมูลไปหา Google Web App แบบมาตรฐาน
       fetch(WEB_APP_URL, {
         method: 'POST',
         body: JSON.stringify({
           date: date, chargeType: chargeType, totalV: totalV, rows: payloadRows
         })
       })
-      .then(res => res.text()) // เปลี่ยนมารับเป็น Text ก่อนเพื่อไม่ให้เบราว์เซอร์บล็อก
+      .then(res => res.text()) // แปลงผลลัพธ์เป็น Text ก่อนเพื่อเลี่ยงปัญหา CORS พังเงียบ
       .then(text => {
-        const result = JSON.parse(text); // นำข้อความดิบมาแปลงกลับเป็นวัตถุข้อมูลด้วยตัวเอง
-        if(result.status === "success") {
-          alert('🎉 บันทึกข้อมูลและสร้าง PDF สำเร็จแล้ว!');
+        const result = JSON.parse(text); 
+        
+        if (result.status === "success") {
+          // กรณีกระบวนการหลังบ้านทำสำเร็จทั้งหมด
+          alert('🎉 บันทึกข้อมูลและสร้างไฟล์ PDF เรียบร้อยแล้วครับ!');
+          const pdfLink = document.getElementById('pdfLink');
+          pdfLink.href = result.pdfUrl;
           
-          const previewLink = document.getElementById('previewLink');
-          const downloadLink = document.getElementById('downloadLink');
-          
-          previewLink.href = result.pdfUrl;
-          downloadLink.href = result.pdfUrl.replace('/view?usp=drivesdk', '/download?export=download').replace('/view', '/download');
-          
-          const pdfSection = document.getElementById('pdfSection');
-          pdfSection.style.display = 'block';
-          pdfSection.scrollIntoView({ behavior: 'smooth' });
+          document.getElementById('pdfSection').style.display = 'block';
+          document.getElementById('pdfSection').scrollIntoView({ behavior: 'smooth' });
         } else {
-          alert('เกิดปัญหาในการสร้างไฟล์จากระบบหลังบ้าน');
+          // 🛑 ถ้าหลังบ้านพังในสเต็ปไหนก็ตาม มันจะเอาเหตุผลที่แท้จริงมาแฉบนหน้าจอตรงนี้ทันที!
+          alert('❌ หลังบ้านบันทึกสำเร็จ แต่ระบบสร้าง PDF พังเพราะ: \n' + result.message);
         }
       })
       .catch(err => {
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อขากลับ: ' + err);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย: ' + err);
       });
     }
   </script>
