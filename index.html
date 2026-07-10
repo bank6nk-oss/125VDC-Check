@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>แบบตรวจสอบแบตเตอรี่ 125 VDC</title>
-  <import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
   <style>
+    /* นำคำสั่ง @import มาไว้ในสไตล์ให้ถูกต้อง */
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+
     * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
     body { font-size: 16px; padding: 15px; background-color: #f4f6f9; color: #333; margin: 0; }
     h1 { font-size: 18px; text-align: center; color: #111; margin-bottom: 20px; }
@@ -31,7 +33,6 @@
     }
     .btn-add { background-color: #007bff; }
     .btn-save { background-color: #28a745; }
-    .btn-pdf { background-color: #dc3545; }
     
     .warning { color: red; font-weight: bold; font-size: 14px; }
   </style>
@@ -74,7 +75,7 @@
         <tr>
           <td class="row-number">1</td>
           <td>
-            <select class="status" onchange="validatePhotoRequirement(this)">
+            <select class="status">
               <option value="ปกติ">ปกติ</option>
               <option value="ผิดปกติ">ผิดปกติ</option>
             </select>
@@ -104,7 +105,7 @@
       row.innerHTML = `
         <td class="row-number">${rowCount}</td>
         <td>
-          <select class="status" onchange="validatePhotoRequirement(this)">
+          <select class="status">
             <option value="ปกติ">ปกติ</option>
             <option value="ผิดปกติ">ผิดปกติ</option>
           </select>
@@ -127,11 +128,7 @@
       }
     }
 
-    function validatePhotoRequirement(el) {
-      // ฟังก์ชันเปิดไว้สำหรับทำเงื่อนไขแจ้งเตือนไฮไลต์สีกรอบรูปภาพเสริม
-    }
-
-    // ฟังก์ชันแปลงไฟล์รูปภาพเป็น Base64 String เพื่อให้ส่งผ่านอินเทอร์เน็ตได้
+    // ฟังก์ชันแปลงไฟล์รูปภาพเป็น Base64
     function fileToBase64(file) {
       return new Promise((resolve, reject) => {
         if (!file) resolve(null);
@@ -153,7 +150,6 @@
       const tableRows = document.getElementById('batteryTable').getElementsByTagName('tbody')[0].rows;
       let payloadRows = [];
 
-      // วนลูปเช็คข้อมูลในตารางทุกแถว
       for (let i = 0; i < tableRows.length; i++) {
         let row = tableRows[i];
         let num = row.querySelector('.row-number').innerText;
@@ -179,10 +175,8 @@
         });
       }
 
-      // แสดงสถานะกำลังบันทึก
       alert('ระบบกำลังอัปโหลดรูปภาพ บันทึกข้อมูลลง Sheet และสร้างไฟล์ PDF อาจใช้เวลาสักครู่ครับ...');
 
-      // ยิงข้อมูลไปหา Google Apps Script หลังบ้าน
       fetch(WEB_APP_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -193,7 +187,7 @@
       })
       .then(() => {
         alert('🎉 บันทึกข้อมูลและจัดเก็บไฟล์สำเร็จเรียบร้อยแล้ว!');
-        location.reload(); // เคลียร์หน้าจอพร้อมใช้งานรอบใหม่
+        location.reload(); 
       })
       .catch(err => {
         alert('เกิดข้อผิดพลาด: ' + err);
